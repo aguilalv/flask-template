@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "ffreedom-expenses"
+version = "0.1.0"
+description = ""
+authors = ["Alvaro Aguilar <alvaro.aguilar.lopez@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+flask = "^3.1.0"
+gunicorn = "^23.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+behave = "^1.2.6"
+requests = "^2.32.3"
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
+ruff = "^0.9.3"
+black = "^25.1.0"
+pip-audit = "^2.7.3"
+coverage = {extras = ["toml"], version = "^7.6.10"}
+pre-commit = "^4.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.coverage.run]
+branch = true
+source = ["ffreedom_expenses"]
+omit = [
+    "wsgi.py"
+]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+

@@ -1,0 +1,58 @@
+name: Deploy to Google Cloud Run
+
+on:
+  push:
+    tags:
+      - "v*.*.*"  # Only trigger for version tags (e.g., v1.0.0)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      # 2. Authenticate with Google Cloud
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # 3. Set up Google Cloud CLI
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          version: 'latest'
+
+      # 4. Install gcloud beta components (optional, but recommended)
+      # - name: Install gcloud beta components
+      #   run: |
+      #     gcloud components install beta --quiet
+      
+      # 5. Authenticate Docker with Google Artifact Registry
+      - name: Authenticate Docker with GAR
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Extract Tag Name
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ffreedom-docker-repo/ffreedom-expenses:$VERSION .
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ffreedom-docker-repo/ffreedom-expenses:$VERSION
+
+      - name: Deploy to Google Cloud Run
+        run: |
+          gcloud run deploy ffreedom-expenses \
+            --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ffreedom-docker-repo/ffreedom-expenses:$VERSION \
+            --platform managed \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --memory 512Mi \
+            --cpu 1 \
+            --max-instances 2 \
+            --min-instances 0 \
+
